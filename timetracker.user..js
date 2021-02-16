@@ -13,8 +13,8 @@
 // @grant        GM_registerMenuCommand
 // @grant        GM_openInTab
 // @noframes
-// @updateURL    https://drive.google.com/file/d/19H0TB0LMWEDfDDSqIjcgjuf4ODQ50sV3/view
-// @downloadURL  https://drive.google.com/file/d/19H0TB0LMWEDfDDSqIjcgjuf4ODQ50sV3/view
+// @updateURL    https://github.com/kaykarun/tampermonkey/raw/main/timetracker.user.js
+// @downloadURL  https://github.com/kaykarun/tampermonkey/raw/main/timetracker.user.js
 // @require      http://code.jquery.com/jquery-3.4.1.min.js
 // ==/UserScript==
 

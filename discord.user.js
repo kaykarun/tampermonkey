@@ -10,8 +10,8 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @noframes
-// @updateURL    https://drive.google.com/file/d/1qZLwi9mKV500P6Wr0xI-wPKnjpUj9-uO/view
-// @downloadURL  https://drive.google.com/file/d/1qZLwi9mKV500P6Wr0xI-wPKnjpUj9-uO/view
+// @updateURL    https://github.com/kaykarun/tampermonkey/raw/main/discord.user.js
+// @downloadURL  https://github.com/kaykarun/tampermonkey/raw/main/discord.user.js
 // @require      http://code.jquery.com/jquery-3.4.1.min.js
 // ==/UserScript==
 
