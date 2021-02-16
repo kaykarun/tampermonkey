@@ -183,7 +183,7 @@ function renderChart() {
     var elem = document.createElement("meta");
     elem.setAttribute("http-equiv", "refresh");
     elem.setAttribute("content", "30");
-    document.head.appendChild(elem);
+    //document.head.appendChild(elem);
 
     getTimeData(chart.data[0].dataPoints, domain);
 
