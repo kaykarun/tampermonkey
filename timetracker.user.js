@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Time Tracking Helper
 // @namespace    familysicle
-// @version      0.6
+// @version      0.61
 // @description  try to take over the world!
 // @author       You
 // @match        https://*/*
