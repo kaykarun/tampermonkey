@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Time Tracking Helper
 // @namespace    familysicle
-// @version      0.61
+// @version      0.65
 // @description  try to take over the world!
 // @author       You
 // @match        https://*/*
@@ -12,6 +12,7 @@
 // @grant        GM_getValue
 // @grant        GM_registerMenuCommand
 // @grant        GM_openInTab
+// @grant        unsafeWindow
 // @noframes
 // @updateURL    https://github.com/kaykarun/tampermonkey/raw/main/timetracker.user.js
 // @downloadURL  https://github.com/kaykarun/tampermonkey/raw/main/timetracker.user.js
@@ -54,7 +55,6 @@ function mapDiscordURLs() {
     var nm;
     if (window.location.pathname.indexOf('@me') == -1) {
         nm = $( '.name-1jkAdW' );
-        //console.log("Channel "+nm[0].innerText);
         nm = nm[0].innerText;
         if (nm.indexOf(":") != -1) {
             nm = nm.substring(nm.indexOf(":")+1);
@@ -62,7 +62,6 @@ function mapDiscordURLs() {
         return nm;
     } else if (window.location.pathname.indexOf('/@me/') != -1){
         nm = $( '.selected-aXhQR6' );
-        //console.log("DM "+nm[0].innerText);
         return "DM: "+nm[0].innerText;
     }
     return window.location.pathname;
@@ -70,13 +69,10 @@ function mapDiscordURLs() {
 
 function trackTime() {
     if (window.location.href.indexOf(reportURL) != -1) {
+        updateChart();
         return;
     }
     if (document.visibilityState != "visible") {
-        return;
-    }
-    // Skip iframes
-    if (window.top != window.self) {
         return;
     }
 
@@ -102,21 +98,34 @@ function trackTime() {
     GM_setValue(getStorageName(), timemap);
 }
 
+function toHours(mn) {
+    if (mn < 60) {
+        return mn + " mins";
+    } else {
+        var hr = Math.floor(mn/60);
+        mn = mn % 60;
+        return hr + "hrs, "+ mn + " mins";
+    }
+}
+
 var chart = {
 	animationEnabled: true,
 	theme: "light2", // "light1", "light2", "dark1", "dark2"
 	title:{
 		text: "Top Sites Visited"
 	},
+	subtitles:[{
+		text: "Total time: "
+	}],
 	axisY: {
 		title: "Time (mins)"
 	},
-	data: [{
-        //click: chartDrillDownHandler,
-		type: "bar",
-		showInLegend: true,
-		legendMarkerColor: "grey",
-		dataPoints: []
+    data: [{
+        type: "pie",
+		showInLegend: false,
+        startAngle: -180,
+        toolTipContent: "{label}: {y} mins, #percent%",
+        dataPoints: []
 	}]
 };
 
@@ -141,34 +150,77 @@ function getTimeData(dataPoints, domain) {
         a = a[1];
         b = b[1];
 
-        return a < b ? -1 : (a > b ? 1 : 0);
+        return a < b ? 1 : (a > b ? -1 : 0);
     });
-    var i, k, v = 0, bottomN = 0;
-    if (tuples.length > topN) {
-        bottomN = tuples.length - topN;
-    }
-    for (i = 0; i < bottomN; i++) {
-        v += tuples[i][1];
-    }
-    if (v > 0) {
-        dataPoints.push({"label": "other sites", "y": v});
-    }
+    while (dataPoints.length) { dataPoints.pop(); }
+    var i, k, v = 0;
 
-    for (i = bottomN; i < tuples.length; i++) {
+    for (i = 0; i < Math.min(tuples.length, topN); i++) {
         k = tuples[i][0];
         v = tuples[i][1];
         dataPoints.push({"label": k, "y": v});
     }
+    if (tuples.length > topN) {
+        for (i = topN; i < tuples.length; i++) {
+            v += tuples[i][1];
+        }
+        if (v > 0) {
+            dataPoints.push({"label": "other sites", "y": v});
+        }
+    }
+}
+
+function getTotalTime(domain) {
+    var timemap = GM_getValue(getStorageName(), {});
+    var time = 0;
+    if (domain == "") {
+        for (var key in timemap) {
+            if (key != "date") {
+                time += timemap[key].total/4;
+            }
+        }
+    } else {
+        var map = timemap[domain];
+        for (key in map) {
+            if (key != "total") {
+                time += map[key]/4;
+            }
+        }
+    }
+    return time;
+}
+
+function updateChart() {
+    var domain = "";
+    var mychart = unsafeWindow.mychart;
+    if (mychart.options.title.text != chart.title.text) {
+        domain = mychart.options.title.text;
+    }
+    var time = getTotalTime(domain);
+    mychart.options.subtitles[0].text = "Total time: "+toHours(time);
+    getTimeData(mychart.data[0].dataPoints, domain);
+    mychart.options.data[0].click = chartDrilldownHandler;
+    mychart.render();
+}
+
+function chartDrilldownHandler(e) {
+    var mychart = unsafeWindow.mychart;
+    var domain = e.dataPoint.label;
+    if (mychart.options.title.text != chart.title.text || domain == "other sites") {
+        domain = "";
+        mychart.options.title.text = chart.title.text;
+    } else {
+        mychart.options.title.text = domain;
+    }
+    var time = getTotalTime(domain);
+    mychart.options.subtitles[0].text = "Total time: "+toHours(time);
+    getTimeData(mychart.data[0].dataPoints, domain);
+    mychart.render();
 }
 
 function renderChart() {
     if (window.location.href.indexOf(reportURL) == -1) {
         return;
-    }
-
-    var domain = window.location.href.substring(reportURL.length+1);
-    if (domain == "other%20sites") {
-        domain = "";
     }
 
     while (document.head.firstChild) {
@@ -179,33 +231,17 @@ function renderChart() {
     }
     document.title = "Time tracker report";
 
-    //<meta http-equiv="refresh" content="30">
-    var elem = document.createElement("meta");
-    elem.setAttribute("http-equiv", "refresh");
-    elem.setAttribute("content", "30");
-    //document.head.appendChild(elem);
-
-    getTimeData(chart.data[0].dataPoints, domain);
+    getTimeData(chart.data[0].dataPoints, "");
+    var time = getTotalTime("");
 
     var script = document.createElement("script");
     script.type = 'text/javascript';
     script.innerText = "";
-    script.innerText = script.innerText + "function chartDrilldownHandler(e) { ";
-    //script.innerText = script.innerText + "console.log(e.dataPoint.label);";
-    script.innerText = script.innerText + "window.location.href = '";
-    if (domain == "") {
-        script.innerText = script.innerText + reportURL + "/'+e.dataPoint.label;";
-    } else {
-        script.innerText = script.innerText + reportURL + "';";
-    }
-    script.innerText = script.innerText + "} \n";
     script.innerText = script.innerText + "function showChart() { var chart =  new CanvasJS.Chart('chartContainer',";
     script.innerText = script.innerText + JSON.stringify(chart);
     script.innerText = script.innerText + "); \n";
-    script.innerText = script.innerText + "chart.options.data[0].click = chartDrilldownHandler; \n";
-    if (domain != "") {
-        script.innerText = script.innerText + "chart.options.title.text = '"+ domain +"'; \n";
-    }
+    script.innerText = script.innerText + "window.mychart = chart; \n";
+    script.innerText = script.innerText + "chart.options.subtitles[0].text = 'Total time: "+toHours(time)+"'; \n";
     script.innerText = script.innerText + "chart.render();} \n";
     document.head.appendChild(script);
 
