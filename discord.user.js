@@ -35,70 +35,58 @@ var servers = [
         "name" : "testserver",
         "id" : "809908088185684049",
         "url" : "https://discord.com/channels/809908088185684049/809908088697913346",
-        "hide" : ["lightsout", "school"]
+        "hide" : ["lightsout", "classes", "breaks"]
     },
     {
         "name" : "WRRF CADathon Discord",
         "id" : "749773878162620616",
         "url" : "https://discord.com/channels/749773878162620616/749791320972722196",
-        "hide" : ["lightsout", "school", "!breaks"]
+        "hide" : ["lightsout", "classes"]
     }
 ];
 
-var timeblocks = {
-    "lightsout" : [
-        [0, 6], [0, 6], [0, 60],
-        [0, 6], [22, 23], [0, 60]
-    ],
-    "school" : [
-        [1, 1], [7, 7], [30, 60],
-        [1, 1], [8, 13], [0, 60],
-        [2, 2], [8, 8], [30, 60],
-        [2, 2], [9, 14], [0, 60],
-        [2, 2], [15, 15], [0, 60],
-        [3, 3], [9, 10], [0, 60],
-        [4, 4], [8, 13], [0, 60],
-        [4, 4], [8, 13], [0, 60],
-        [5, 5], [8, 8], [30, 60],
-        [5, 5], [9, 14], [0, 60],
-        [5, 5], [15, 15], [0, 60]
-    ],
-    "breaks" : [
-        [1, 1], [9, 9], [30, 45],
-        [1, 1], [11, 11], [15, 60],
-        [1, 1], [12, 12], [0, 15],
-        [2, 2], [10, 10], [30, 45],
-        [2, 2], [12, 12], [15, 60],
-        [2, 2], [13, 13], [0, 60],
-        [4, 4], [9, 9], [30, 45],
-        [4, 4], [11, 11], [15, 60],
-        [4, 4], [12, 12], [0, 15],
-        [5, 5], [10, 10], [30, 45],
-        [5, 5], [12, 12], [15, 60],
-        [5, 5], [13, 13], [0, 60]
-    ]
+var timeslots = {
+  "lightsout" : [
+    [0, 730], [2200, 2400],
+    [10000, 10730], [12200, 12400],
+    [20000, 20730], [22200, 22400],
+    [30000, 30730], [32200, 32400],
+    [40000, 40730], [42200, 42400],
+    [50000, 50730], [52200, 52400],
+    [60000, 60730], [62200, 62400]
+  ],
+  "classes" : [
+    [900, 1100],
+    [10800, 10930], [10945, 11115], [11215, 11345],
+    [20900, 21030], [21045, 21215], [21400, 21530],
+    [30900, 31000], [31500, 31600], [31630, 31830],
+    [40800, 40930], [40945, 41115], [41215, 41345], [41800, 42000],
+    [50900, 51030], [51045, 51215], [51400, 51530]
+  ],
+  "breaks" : [
+    [10930, 10945], [11115, 11215],
+    [21030, 21045], [21215, 21400],
+    [40930, 40945], [41115, 41215],
+    [51030, 51045], [51215, 51400],
+  ]
 }
 
 
 var familysicleURL = "https://discord.com/channels/809905984209551390/809905984209551393";
 
-function matchTimeBlock(key) {
-    var timeblock = timeblocks[key];
-    var i, d = new Date();
-    var dy = d.getDay();
-    var hr = d.getHours();
-    var mn = d.getMinutes();
-    var cnt = timeblock.length / 3;
-    for (i = 0; i < cnt; i++) {
-        if (dy >= timeblock[i*3][0] && dy <= timeblock[i*3][1]) {
-            if (hr >= timeblock[i*3+1][0] && hr <= timeblock[i*3+1][1]) {
-                if (mn >= timeblock[i*3+2][0] && mn <= timeblock[i*3+2][1]) {
-                    return true;
-                }
-            }
-        }
+function matchTimeSlot(key) {
+  var timeslot = timeslots[key];
+  var i, d = new Date();
+  var dy = d.getDay();
+  var hr = d.getHours();
+  var mn = d.getMinutes();
+  var tm = dy*10000+hr*100+mn;
+  for (i = 0; i < timeslot.length; i++) {
+    if (tm >= timeslot[i][0] && tm <= timeslot[i][1]) {
+      return true;
     }
-    return false;
+  }
+  return false;
 }
 
 function listChannels() {
