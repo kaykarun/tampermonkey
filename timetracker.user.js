@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Time Tracking Helper
 // @namespace    familysicle
-// @version      0.65
+// @version      0.66
 // @description  try to take over the world!
 // @author       You
 // @match        https://*/*
@@ -255,6 +255,8 @@ function renderChart() {
     div.id = 'chartContainer';
     div.style.cssText = 'height: 600px; width: 80%; margin: auto;';
     document.body.appendChild(div);
+
+    setTimeout(updateChart, 1000);
 }
 
 function openReport() {
