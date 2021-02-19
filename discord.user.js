@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         discord_script
 // @namespace    familysicle
-// @version      0.5
+// @version      0.6
 // @description  try to take over the world!
 // @author       You
 // @match        https://discord.com/*
@@ -143,12 +143,12 @@ function shouldHide(blocks) {
         }
         key = blocks[i];
         if (key.substring(0, 1) != "!") {
-            if (matchTimeBlock(key)) {
+            if (matchTimeSlot(key)) {
                 hide = true;
             }
         } else {
             key = key.substring(1);
-            if (matchTimeBlock(key)) {
+            if (matchTimeSlot(key)) {
                 hide = false;
             }
         }
@@ -205,7 +205,7 @@ function trackTime() {
         } else {
             nm = obj.innerHTML;
         }
-        obj.innerHTML = Math.floor(timemap[nm]/6) + ":" + nm;
+        obj.innerHTML = timemap[nm]/4 + ":" + nm;
     });
 }
 
@@ -217,4 +217,4 @@ switchToFamily(window.location);
 justWait();
 
 setInterval(hideServers, 60000);
-setInterval(trackTime, 10000);
+setInterval(trackTime, 15000);
