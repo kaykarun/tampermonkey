@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Time Tracking Helper
 // @namespace    familysicle
-// @version      0.66
+// @version      0.7
 // @description  try to take over the world!
 // @author       You
 // @match        https://*/*
@@ -19,17 +19,34 @@
 // @require      http://code.jquery.com/jquery-3.4.1.min.js
 // ==/UserScript==
 
-var reportURL = "http://192.168.55.1/report";
-var topN = 10;
+const monthNames = ["January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
 
-function getStorageName() {
+var reportURL = "http://192.168.55.1/report";
+var topN = 8;
+var curDate = -1;
+
+function getDateStr() {
     var d = new Date();
     var m = d.getMonth();
     var dt = d.getDate();
-    if (m > 1 || dt > 15) {
-        return "timemap_"+dt;
+    if (curDate < 0) {
+        return monthNames[m] + ", "+ dt;
+    } else if (dt < curDate) {
+        return monthNames[(m-1)% 12] + ", "+ curDate;
+    } else {
+        return monthNames[m] + ", "+ curDate;
     }
-    return "timemap";
+}
+
+function getStorageName() {
+    if (curDate == -1) {
+        var d = new Date();
+        var m = d.getMonth();
+        curDate = d.getDate();
+    }
+    return "timemap_"+curDate;
 }
 
 function mapPathNames() {
@@ -112,11 +129,16 @@ var chart = {
 	animationEnabled: true,
 	theme: "light2", // "light1", "light2", "dark1", "dark2"
 	title:{
+        fontSize: 36,
 		text: "Top Sites Visited"
 	},
 	subtitles:[{
+        fontSize: 20,
+        text: getDateStr()
+	}, {
+        fontSize: 20,
 		text: "Total time: "
-	}],
+    }],
 	axisY: {
 		title: "Time (mins)"
 	},
@@ -125,6 +147,7 @@ var chart = {
 		showInLegend: false,
         startAngle: -180,
         toolTipContent: "{label}: {y} mins, #percent%",
+        indexLabelFontSize: 18,
         dataPoints: []
 	}]
 };
@@ -197,7 +220,8 @@ function updateChart() {
         domain = mychart.options.title.text;
     }
     var time = getTotalTime(domain);
-    mychart.options.subtitles[0].text = "Total time: "+toHours(time);
+    mychart.options.subtitles[0].text = getDateStr();
+    mychart.options.subtitles[1].text = "Total time: "+toHours(time);
     getTimeData(mychart.data[0].dataPoints, domain);
     mychart.options.data[0].click = chartDrilldownHandler;
     mychart.render();
@@ -213,7 +237,8 @@ function chartDrilldownHandler(e) {
         mychart.options.title.text = domain;
     }
     var time = getTotalTime(domain);
-    mychart.options.subtitles[0].text = "Total time: "+toHours(time);
+    mychart.options.subtitles[0].text = getDateStr();
+    mychart.options.subtitles[1].text = "Total time: "+toHours(time);
     getTimeData(mychart.data[0].dataPoints, domain);
     mychart.render();
 }
@@ -241,7 +266,8 @@ function renderChart() {
     script.innerText = script.innerText + JSON.stringify(chart);
     script.innerText = script.innerText + "); \n";
     script.innerText = script.innerText + "window.mychart = chart; \n";
-    script.innerText = script.innerText + "chart.options.subtitles[0].text = 'Total time: "+toHours(time)+"'; \n";
+    script.innerText = script.innerText + "chart.options.subtitles[0].text = '"+getDateStr()+"'; \n";
+    script.innerText = script.innerText + "chart.options.subtitles[1].text = 'Total time: "+toHours(time)+"'; \n";
     script.innerText = script.innerText + "chart.render();} \n";
     document.head.appendChild(script);
 
@@ -251,12 +277,57 @@ function renderChart() {
     script.setAttribute("onload", "showChart()");
     document.head.appendChild(script);
 
+    var link = document.createElement("link");
+    link.setAttribute("rel", "stylesheet");
+    link.setAttribute("href", "https://www.w3schools.com/lib/w3schools23.css");
+    document.head.appendChild(link);
+
+
+    var topdiv = document.createElement('div');
+    topdiv.setAttribute("class", "w3-clear nextprev");
+    topdiv.style.cssText="overflow: hidden";
+
+    var a = document.createElement('a');
+    a.id="prev";
+    a.setAttribute("class", "w3-left w3-btn");
+    a.setAttribute("href", "#");
+    a.style.cssText = 'width:150px; position: absolute; top: 758px; left: 10%; z-index: 1;';
+    a.innerText = "< Previous";
+    topdiv.appendChild(a);
+
+    a = document.createElement('a');
+    a.id="next";
+    a.setAttribute("class", "w3-right w3-btn");
+    a.setAttribute("href", "#");
+    a.style.cssText = 'width:150px; position: absolute; top: 758px; right: 10%; z-index: 1;';
+    a.innerText = "Next >";
+    topdiv.appendChild(a);
+
     var div = document.createElement('div');
     div.id = 'chartContainer';
-    div.style.cssText = 'height: 600px; width: 80%; margin: auto;';
-    document.body.appendChild(div);
+    div.style.cssText = 'height: 800px; width: 80%; margin: auto; z-index: 0;';
+    topdiv.appendChild(div);
+
+
+    document.body.appendChild(topdiv);
 
     setTimeout(updateChart, 1000);
+    $("#prev").click (previousDate);
+    $("#next").click (nextDate);
+}
+
+function previousDate() {
+    curDate = curDate - 1;
+    updateChart();
+}
+
+function nextDate() {
+    var d = new Date();
+    curDate = curDate + 1;
+    if (curDate > d.getDate()) {
+        curDate = d.getDate();
+    }
+    updateChart();
 }
 
 function openReport() {
