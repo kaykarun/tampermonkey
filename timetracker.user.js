@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Time Tracking Helper
 // @namespace    familysicle
-// @version      0.73
+// @version      0.74
 // @description  try to take over the world!
 // @author       You
 // @match        https://*/*
@@ -30,7 +30,7 @@ const fixedColorMap = {
     "mvrt.com": "#662D91"
 }
 
-const defaultColorSet = "#6D78AD #51CDA0 #DF7970 #4C9CA0 #AE7D99 #C9D45C #5592AD #DF874D #52BCA8 #8E7AA3 #E3CB64 #C77B85 #C39762 #8DD17E #B57952 #FCC26C".split(" ");
+const defaultColorSet = "#4F81BC #C0504E #9BBB58 #23BFAA #8064A1 #4AACC5 #F79647 #7F6084 #77A033 #33558B #E59566".split(" ");
 
 var reportURL = "http://192.168.55.1/report";
 var topN = 8;
@@ -39,7 +39,7 @@ var curDate = -1;
 var chart = {
 	animationEnabled: true,
 	theme: "light2", // "light1", "light2", "dark1", "dark2"
-    colorSet: "colorSet1",
+    colorSet: "colorSet2",
 	title:{
         fontSize: 36,
 		text: "Top Sites Visited"
@@ -123,7 +123,7 @@ function mapDiscordURLs() {
 }
 
 function updateColorMap() {
-    var i, k, tmap, fulltmap = {}, tuples = [], colorMap = fixedColorMap;
+    var i, j, k, tmap, fulltmap = {}, tuples = [], colorMap = fixedColorMap;
     for (i = 1; i <=31; i++) {
         tmap = GM_getValue("timemap_"+i, {});
         for (k in tmap) {
@@ -141,8 +141,14 @@ function updateColorMap() {
 
         return a < b ? 1 : (a > b ? -1 : 0);
     });
-    for (i = 0; i < 16; i++) {
-        colorMap[tuples[i][0]] = fixedColorMap[tuples[i][0]] || defaultColorSet[i];
+    i = 0;
+    j = 0;
+    while (j < 11 && i < 16) {
+        if (colorMap[tuples[i][0]] == undefined) {
+            colorMap[tuples[i][0]] = defaultColorSet[j];
+            j = j + 1;
+        }
+        i = i + 1;
     }
     GM_setValue("colorMap", colorMap);
 }
