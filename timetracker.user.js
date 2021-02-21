@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Time Tracking Helper
 // @namespace    familysicle
-// @version      0.71
+// @version      0.72
 // @description  try to take over the world!
 // @author       You
 // @match        https://*/*
@@ -23,9 +23,40 @@ const monthNames = ["January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"
 ];
 
+const defaultColorSet = "#6D78AD #51CDA0 #DF7970 #4C9CA0 #AE7D99 #C9D45C #5592AD #DF874D #52BCA8 #8E7AA3 #E3CB64 #C77B85 #C39762 #8DD17E #B57952 #FCC26C".split(" ");
+
 var reportURL = "http://192.168.55.1/report";
 var topN = 8;
 var curDate = -1;
+
+var chart = {
+	animationEnabled: true,
+	theme: "light2", // "light1", "light2", "dark1", "dark2"
+    colorSet: "colorSet1",
+	title:{
+        fontSize: 36,
+		text: "Top Sites Visited"
+	},
+	subtitles:[{
+        fontSize: 20,
+        text: getDateStr()
+	}, {
+        fontSize: 20,
+		text: "Total time: "
+    }],
+	axisY: {
+		title: "Time (mins)"
+	},
+    data: [{
+        type: "pie",
+		showInLegend: false,
+        startAngle: -180,
+        toolTipContent: "{label}: {y} mins, #percent%",
+        indexLabelFontSize: 18,
+        dataPoints: []
+	}]
+};
+
 
 function getDateStr() {
     var d = new Date();
@@ -84,6 +115,31 @@ function mapDiscordURLs() {
     return window.location.pathname;
 }
 
+function updateColorMap() {
+    var i, k, tmap, fulltmap = {}, tuples = [], colorMap = {};
+    for (i = 1; i <=31; i++) {
+        tmap = GM_getValue("timemap_"+i, {});
+        for (k in tmap) {
+            if (k != "date") {
+                fulltmap[k] = (fulltmap[k] || 0) + tmap[k].total;
+            }
+        }
+    }
+    for (k in fulltmap) {
+        tuples.push([k, fulltmap[k]]);
+    }
+    tuples.sort(function(a, b) {
+        a = a[1];
+        b = b[1];
+
+        return a < b ? 1 : (a > b ? -1 : 0);
+    });
+    for (i = 0; i < 16; i++) {
+        colorMap[tuples[i][0]] = defaultColorSet[i];
+    }
+    GM_setValue("colorMap", colorMap);
+}
+
 function trackTime() {
     if (window.location.href.indexOf(reportURL) != -1) {
         updateChart();
@@ -99,6 +155,7 @@ function trackTime() {
     if (timemap.date == undefined || timemap.date != dt) {
         timemap = {};
         timemap.date = dt;
+        updateColorMap();
     }
     var hostname = window.location.hostname;
     var pathname = mapPathNames();
@@ -125,35 +182,9 @@ function toHours(mn) {
     }
 }
 
-var chart = {
-	animationEnabled: true,
-	theme: "light2", // "light1", "light2", "dark1", "dark2"
-	title:{
-        fontSize: 36,
-		text: "Top Sites Visited"
-	},
-	subtitles:[{
-        fontSize: 20,
-        text: getDateStr()
-	}, {
-        fontSize: 20,
-		text: "Total time: "
-    }],
-	axisY: {
-		title: "Time (mins)"
-	},
-    data: [{
-        type: "pie",
-		showInLegend: false,
-        startAngle: -180,
-        toolTipContent: "{label}: {y} mins, #percent%",
-        indexLabelFontSize: 18,
-        dataPoints: []
-	}]
-};
-
 function getTimeData(dataPoints, domain) {
     var timemap = GM_getValue(getStorageName(), {});
+    var colorMap = GM_getValue("colorMap", {});
     var tuples = [];
     if (domain == "") {
         for (var key in timemap) {
@@ -181,14 +212,15 @@ function getTimeData(dataPoints, domain) {
     for (i = 0; i < Math.min(tuples.length, topN); i++) {
         k = tuples[i][0];
         v = tuples[i][1];
-        dataPoints.push({"label": k, "y": v});
+        var c = colorMap[k] || "";
+        dataPoints.push({"label": k, "y": v, "color": c});
     }
     if (tuples.length > topN) {
         for (i = topN; i < tuples.length; i++) {
             v += tuples[i][1];
         }
         if (v > 0) {
-            dataPoints.push({"label": "other sites", "y": v});
+            dataPoints.push({"label": "other sites", "y": v, "color": "#D3D3D3"});
         }
     }
 }
@@ -215,7 +247,9 @@ function getTotalTime(domain) {
 
 function updateChart() {
     var domain = "";
+    var datapoints;
     var mychart = unsafeWindow.mychart;
+    datapoints = mychart.data[0].dataPoints;
     if (mychart.options.title.text != chart.title.text) {
         domain = mychart.options.title.text;
     }
@@ -248,6 +282,7 @@ function renderChart() {
         return;
     }
 
+    updateColorMap();
     while (document.head.firstChild) {
         document.head.removeChild(document.head.firstChild);
     }

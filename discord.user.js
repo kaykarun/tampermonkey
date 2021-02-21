@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         discord_script
 // @namespace    familysicle
-// @version      0.71
+// @version      0.72
 // @description  try to take over the world!
 // @author       You
 // @match        https://discord.com/*
@@ -23,55 +23,62 @@ var timemap_default = {
 
 var servers = [
     {
-        "name" : "familysicle",
         "id" : "809905984209551390",
         "hide" : ["none"]
     },
     {
-        "name" : "testserver",
         "id" : "809908088185684049",
         "hide" : ["lightsout", "classes", "breaks", "test"]
     },
     {
-        "name" : "WRRF CADathon Discord",
         "id" : "749773878162620616",
         "hide" : ["lightsout", "classes"],
     },
     {
-        "name" : "Oh Noes",
         "id": "812413283738058802",
         "hide": ["lightsout", "classes"],
     },
     {
-        "name" : "MVRT 115",
         "id": "453053002975150081",
         "hide": ["lightsout", "classes"],
     },
     {
-        "name" : "Last of Legends Cup",
         "id": "790453250137522178",
         "hide": ["lightsout", "classes", "breaks"],
     },
     {
-        "name" : "Orange Family",
         "id": "312367941578653696",
         "hide": ["lightsout", "classes", "breaks"],
     },
     {
-        "name" : "STEM Helpers & Students (SCIENCE, TECHNOLOGY, ENGINEERING & MATHS)",
         "id": "493173110799859713",
-        "hide": ["lightsout", "classes", "breaks"],
+        "hide": ["lightsout", "classes", "breaks", "test"],
     },
     {
-        "name" : "Bottest",
         "id": "749758355089784923",
         "hide": ["lightsout", "classes"],
-    }
+    },
+    {
+       "id": "796385692820439060",
+       "hide": ["lightsout", "classes", "breaks"],
+   },
+   {
+       "id": "332526643182567425",
+       "hide": ["lightsout", "classes", "breaks"],
+   },
+   {
+       "id": "326202765309247488",
+       "hide": ["lightsout", "classes", "breaks"],
+   },
+   {
+       "id": "178281233233608705",
+       "hide": ["lightsout", "classes", "breaks"],
+   }
 ];
 
 var timeslots = {
   "test": [
-      [61300, 61315]
+      [1100, 1115]
    ],
   "lightsout" : [
     [0, 730], [2200, 2400],
@@ -128,7 +135,7 @@ function listServers() {
                 }
             }
             if (newurl) {
-                srvlist.push({"name": obj.attributes["aria-label"].nodeValue.trim(), "id": href.split("/")[2], "hide": ["none"]});
+                srvlist.push({"id": href.split("/")[2], "hide": ["lightsout", "classes", "breaks"]});
             }
         }
     });
@@ -138,7 +145,7 @@ function listServers() {
         var j;
         for (j=0; j < servers.length; j++) {
             var s = servers[j];
-            if(obj.innerHTML.indexOf(s.name) != -1) {
+            if(obj.innerHTML.indexOf(s.id) != -1) {
                 obj.id = s.id;
             }
         }
@@ -208,6 +215,7 @@ function trackTime() {
     }
     var d = new Date();
     var dt = d.getDate();
+    var srvid = -1;
     var timemap = GM_getValue("timemap", timemap_default);
     if (timemap.date == undefined || timemap.date != dt) {
         timemap = timemap_default;
@@ -217,7 +225,8 @@ function trackTime() {
     for (i=0; i < servers.length; i++) {
         var s = servers[i];
         if (window.location.href.indexOf(s.id) != -1) {
-            timemap[s.name] = (timemap[s.name] || 0) + 1
+            timemap[s.id] = (timemap[s.id] || 0) + 1
+            srvid = s.id;
         }
     }
     GM_setValue("timemap", timemap);
@@ -229,7 +238,9 @@ function trackTime() {
         } else {
             nm = obj.innerHTML;
         }
-        obj.innerHTML = timemap[nm]/4 + ":" + nm;
+        if (srvid != -1) {
+            obj.innerHTML = timemap[srvid]/4 + ":" + nm;
+        }
     });
 }
 
