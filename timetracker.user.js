@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Time Tracking Helper
 // @namespace    familysicle
-// @version      0.72
+// @version      0.73
 // @description  try to take over the world!
 // @author       You
 // @match        https://*/*
@@ -22,6 +22,13 @@
 const monthNames = ["January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"
 ];
+
+const fixedColorMap = {
+    "discord.com": "#7289da",
+    "Orange Family": "#FFA500",
+    "MVRT 115": "#662D91",
+    "mvrt.com": "#662D91"
+}
 
 const defaultColorSet = "#6D78AD #51CDA0 #DF7970 #4C9CA0 #AE7D99 #C9D45C #5592AD #DF874D #52BCA8 #8E7AA3 #E3CB64 #C77B85 #C39762 #8DD17E #B57952 #FCC26C".split(" ");
 
@@ -116,7 +123,7 @@ function mapDiscordURLs() {
 }
 
 function updateColorMap() {
-    var i, k, tmap, fulltmap = {}, tuples = [], colorMap = {};
+    var i, k, tmap, fulltmap = {}, tuples = [], colorMap = fixedColorMap;
     for (i = 1; i <=31; i++) {
         tmap = GM_getValue("timemap_"+i, {});
         for (k in tmap) {
@@ -135,7 +142,7 @@ function updateColorMap() {
         return a < b ? 1 : (a > b ? -1 : 0);
     });
     for (i = 0; i < 16; i++) {
-        colorMap[tuples[i][0]] = defaultColorSet[i];
+        colorMap[tuples[i][0]] = fixedColorMap[tuples[i][0]] || defaultColorSet[i];
     }
     GM_setValue("colorMap", colorMap);
 }
