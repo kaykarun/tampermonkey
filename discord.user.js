@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         discord_script
 // @namespace    familysicle
-// @version      0.6
+// @version      0.71
 // @description  try to take over the world!
 // @author       You
 // @match        https://discord.com/*
@@ -15,37 +15,64 @@
 // @require      http://code.jquery.com/jquery-3.4.1.min.js
 // ==/UserScript==
 
-debugger;
 
 var timemap_default = {
-    "date" : 0,
-    "familysicle" : 0,
-    "testserver" : 0,
-    "WRRF CADathon Discord": 0
+    "date" : 0
 };
+
 
 var servers = [
     {
         "name" : "familysicle",
         "id" : "809905984209551390",
-        "url" : "https://discord.com/channels/809905984209551390/809905984209551393",
         "hide" : ["none"]
     },
     {
         "name" : "testserver",
         "id" : "809908088185684049",
-        "url" : "https://discord.com/channels/809908088185684049/809908088697913346",
-        "hide" : ["lightsout", "classes", "breaks"]
+        "hide" : ["lightsout", "classes", "breaks", "test"]
     },
     {
         "name" : "WRRF CADathon Discord",
         "id" : "749773878162620616",
-        "url" : "https://discord.com/channels/749773878162620616/749791320972722196",
-        "hide" : ["lightsout", "classes"]
+        "hide" : ["lightsout", "classes"],
+    },
+    {
+        "name" : "Oh Noes",
+        "id": "812413283738058802",
+        "hide": ["lightsout", "classes"],
+    },
+    {
+        "name" : "MVRT 115",
+        "id": "453053002975150081",
+        "hide": ["lightsout", "classes"],
+    },
+    {
+        "name" : "Last of Legends Cup",
+        "id": "790453250137522178",
+        "hide": ["lightsout", "classes", "breaks"],
+    },
+    {
+        "name" : "Orange Family",
+        "id": "312367941578653696",
+        "hide": ["lightsout", "classes", "breaks"],
+    },
+    {
+        "name" : "STEM Helpers & Students (SCIENCE, TECHNOLOGY, ENGINEERING & MATHS)",
+        "id": "493173110799859713",
+        "hide": ["lightsout", "classes", "breaks"],
+    },
+    {
+        "name" : "Bottest",
+        "id": "749758355089784923",
+        "hide": ["lightsout", "classes"],
     }
 ];
 
 var timeslots = {
+  "test": [
+      [61300, 61315]
+   ],
   "lightsout" : [
     [0, 730], [2200, 2400],
     [10000, 10730], [12200, 12400],
@@ -89,26 +116,23 @@ function matchTimeSlot(key) {
   return false;
 }
 
-function listChannels() {
-    var i, channels = "", href;
+function listServers() {
+    var i, srvlist = [], href;
     $( "div[href*='channels']" ).each(function(i, obj) {
         href = obj.attributes.href.nodeValue;
         if (href.indexOf("@me") == -1) {
             var newurl = true;
             for (i=0; i < servers.length; i++) {
-                if (servers[i].url.indexOf(href) != -1) {
+                if (href.indexOf(servers[i].id) != -1) {
                     newurl = false;
                 }
             }
             if (newurl) {
-                channels = channels + href + ":" + obj.attributes["aria-label"].nodeValue + "\n";
+                srvlist.push({"name": obj.attributes["aria-label"].nodeValue.trim(), "id": href.split("/")[2], "hide": ["none"]});
             }
         }
     });
-    if (channels != "") {
-        GM_setClipboard(channels);
-        alert("New channels list copied to clipboard!");
-    }
+    GM_setValue("servers", srvlist);
 
     $( ".listItem-2P_4kh" ).each(function(i, obj) {
         var j;
@@ -125,7 +149,6 @@ function listChannels() {
 function justWait() {
     var guilds = document.getElementsByClassName("listItem-2P_4kh");
     if (guilds.length>6) {
-        listChannels();
         hideServers();
     } else {
         setTimeout(function(){
@@ -157,6 +180,7 @@ function shouldHide(blocks) {
 }
 
 function hideServers() {
+    listServers();
     var j;
     for (j=0; j < servers.length; j++) {
         var s = servers[j];
@@ -172,7 +196,7 @@ function switchToFamily(newurl) {
     var j;
     for (j=0; j< servers.length; j++) {
         var s = servers[j];
-        if (shouldHide(s.hide) && newurl.href.indexOf(s.id) != -1) {
+        if (shouldHide(s.hide) && newurl.indexOf(s.id) != -1) {
             window.location = familysicleURL;
         }
     }
@@ -192,8 +216,8 @@ function trackTime() {
     var i;
     for (i=0; i < servers.length; i++) {
         var s = servers[i];
-        if (window.location.href == s.url) {
-            timemap[s.name] = timemap[s.name] + 1
+        if (window.location.href.indexOf(s.id) != -1) {
+            timemap[s.name] = (timemap[s.name] || 0) + 1
         }
     }
     GM_setValue("timemap", timemap);
@@ -213,7 +237,8 @@ if (window.onurlchange === null) {
     window.addEventListener('urlchange', (event) => switchToFamily(event.url));
 }
 
-switchToFamily(window.location);
+
+switchToFamily(window.location.href);
 justWait();
 
 setInterval(hideServers, 60000);
