@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         Time Tracking Helper
 // @namespace    familysicle
-// @version      0.75
+// @version      0.80
 // @description  try to take over the world!
 // @author       You
 // @match        https://*/*
+// @match        http://*/*
 // @match        http://192.168.55.1/*
 // @grant        window.onurlchange
 // @grant        GM_setClipboard
@@ -37,12 +38,13 @@ const defaultColorSet = "#6D78AD #51CDA0 #DF7970 #4C9CA0 #AE7D99 #C9D45C #5592AD
 var reportURL = "http://192.168.55.1/report";
 var topN = 8;
 var curDate = -1;
+var curChart = "pie";
 
-var chart = {
+var piechart = {
 	animationEnabled: true,
 	theme: "light2", // "light1", "light2", "dark1", "dark2"
     colorSet: "colorSet1",
-	title:{
+    title:{
         fontSize: 36,
 		text: "Top Sites Visited"
 	},
@@ -54,7 +56,13 @@ var chart = {
 		text: "Total time: "
     }],
 	axisY: {
+        titleFontSize: 20,
+        labelFontSize: 16,
 		title: "Time (mins)"
+	},
+	axisX: {
+        titleFontSize: 20,
+        labelFontSize: 16
 	},
     data: [{
         type: "pie",
@@ -63,6 +71,67 @@ var chart = {
         toolTipContent: "{label}: {y} mins, #percent%",
         indexLabelFontSize: 18,
         dataPoints: []
+	}]
+};
+
+var areachart = {
+	animationEnabled: true,
+	theme: "light2", // "light1", "light2", "dark1", "dark2"
+    colorSet: "colorSet1",
+    title:{
+        fontSize: 36,
+		text: "Trend of Sites Visited"
+	},
+	axisY: {
+        titleFontSize: 20,
+        labelFontSize: 16,
+		title: "Time (mins)"
+	},
+	axisX: {
+        titleFontSize: 20,
+        labelFontSize: 16
+	},
+    legend: {
+		verticalAlign: "top",
+		horizontalAlign: "right",
+		dockInsidePlotArea: true,
+        fontSize: 16
+	},
+    data: [{
+       name: "1",
+       type: "stackedArea",
+       showInLegend: true,
+       legendMarkerType: "square",
+       toolTipContent: "{y} mins",
+       dataPoints: []
+	},{
+       name: "2",
+       type: "stackedArea",
+       showInLegend: true,
+       legendMarkerType: "square",
+       toolTipContent: "{y} mins",
+       dataPoints: []
+	},{
+       name: "3",
+       type: "stackedArea",
+       showInLegend: true,
+       legendMarkerType: "square",
+       toolTipContent: "{y} mins",
+       dataPoints: []
+	},{
+       name: "4",
+       type: "stackedArea",
+       showInLegend: true,
+       legendMarkerType: "square",
+       toolTipContent: "{y} mins",
+       dataPoints: []
+	},{
+       name: "5",
+       type: "stackedArea",
+       showInLegend: true,
+       legendMarkerType: "square",
+       toolTipContent: "{y} mins",
+       dataPoints: []
 	}]
 };
 
@@ -124,8 +193,8 @@ function mapDiscordURLs() {
     return window.location.pathname;
 }
 
-function updateColorMap() {
-    var i, j, k, tmap, fulltmap = {}, tuples = [], colorMap = fixedColorMap;
+function getTopSites() {
+    var i, k, tmap, fulltmap = {}, tuples = [];
     for (i = 1; i <=31; i++) {
         tmap = GM_getValue("timemap_"+i, {});
         for (k in tmap) {
@@ -143,6 +212,12 @@ function updateColorMap() {
 
         return a < b ? 1 : (a > b ? -1 : 0);
     });
+    return tuples;
+}
+
+function updateColorMap() {
+    var i, j, tuples = [], colorMap = fixedColorMap;
+    tuples = getTopSites();
     i = 0;
     j = 0;
     while (j < 16 && i < 16 && i < tuples.length) {
@@ -236,7 +311,7 @@ function getTimeData(dataPoints, domain) {
             v += tuples[i][1];
         }
         if (v > 0) {
-            dataPoints.push({"label": "other sites", "y": v, "color": "#D3D3D3"});
+            dataPoints.push({"label": "others", "y": v, "color": "#D3D3D3"});
         }
     }
 }
@@ -264,9 +339,9 @@ function getTotalTime(domain) {
 function updateChart() {
     var domain = "";
     var datapoints;
-    var mychart = unsafeWindow.mychart;
+    var mychart = unsafeWindow.piechart;
     datapoints = mychart.data[0].dataPoints;
-    if (mychart.options.title.text != chart.title.text) {
+    if (mychart.options.title.text != piechart.title.text) {
         domain = mychart.options.title.text;
     }
     var time = getTotalTime(domain);
@@ -278,11 +353,11 @@ function updateChart() {
 }
 
 function chartDrilldownHandler(e) {
-    var mychart = unsafeWindow.mychart;
+    var mychart = unsafeWindow.piechart;
     var domain = e.dataPoint.label;
-    if (mychart.options.title.text != chart.title.text || domain == "other sites") {
+    if (mychart.options.title.text != piechart.title.text || domain == "others") {
         domain = "";
-        mychart.options.title.text = chart.title.text;
+        mychart.options.title.text = piechart.title.text;
     } else {
         mychart.options.title.text = domain;
     }
@@ -291,7 +366,52 @@ function chartDrilldownHandler(e) {
     mychart.options.subtitles[1].text = "Total time: "+toHours(time);
     getTimeData(mychart.data[0].dataPoints, domain);
     mychart.render();
+    if (domain != "") {
+        $("#switch").hide();
+    } else {
+        $("#switch").show();
+    }
 }
+
+function switchChart() {
+    if (curChart == "pie") {
+        $("#switch").text("Report");
+        $("#prev").hide();
+        $("#next").hide();
+        $("#chartContainer").hide();
+        $("#areaChartContainer").show();
+        switchChartToArea();
+        curChart = "area";
+    } else {
+        $("#switch").text("Trend");
+        $("#prev").show();
+        $("#next").show();
+        $("#chartContainer").show();
+        $("#areaChartContainer").hide();
+        curChart = "pie";
+    }
+}
+
+function switchChartToArea() {
+    var i, j, d = new Date();
+    var tuples = getTopSites();
+    var mychart = unsafeWindow.areachart;
+    for (j=0; j < 5; j++) {
+        var domain = tuples[j][0];
+        mychart.options.data[j].name = domain;
+        while (mychart.options.data[j].dataPoints.length) { mychart.options.data[j].dataPoints.pop(); }
+        for (i=0; i < 31; i++) {
+            var di = new Date();
+            var t = 0, tmap = {};
+            di.setDate(d.getDate() - i);
+            tmap = GM_getValue("timemap_"+di.getDate(), {});
+            t = (tmap[domain]||{"total": 0}).total/4;
+            mychart.options.data[j].dataPoints.push({x: di, y: t});
+        }
+    }
+    mychart.render();
+}
+
 
 function renderChart() {
     if (window.location.href.indexOf(reportURL) == -1) {
@@ -307,18 +427,23 @@ function renderChart() {
     }
     document.title = "Time tracker report";
 
-    getTimeData(chart.data[0].dataPoints, "");
+    getTimeData(piechart.data[0].dataPoints, "");
     var time = getTotalTime("");
 
     var script = document.createElement("script");
     script.type = 'text/javascript';
     script.innerText = "";
     script.innerText = script.innerText + "function showChart() { var chart =  new CanvasJS.Chart('chartContainer',";
-    script.innerText = script.innerText + JSON.stringify(chart);
+    script.innerText = script.innerText + JSON.stringify(piechart);
     script.innerText = script.innerText + "); \n";
-    script.innerText = script.innerText + "window.mychart = chart; \n";
+    script.innerText = script.innerText + "window.piechart = chart; \n";
     script.innerText = script.innerText + "chart.options.subtitles[0].text = '"+getDateStr()+"'; \n";
     script.innerText = script.innerText + "chart.options.subtitles[1].text = 'Total time: "+toHours(time)+"'; \n";
+    script.innerText = script.innerText + "chart.render(); \n";
+    script.innerText = script.innerText + "chart =  new CanvasJS.Chart('areaChartContainer',";
+    script.innerText = script.innerText + JSON.stringify(areachart);
+    script.innerText = script.innerText + "); \n";
+    script.innerText = script.innerText + "window.areachart = chart; \n";
     script.innerText = script.innerText + "chart.render();} \n";
     document.head.appendChild(script);
 
@@ -354,17 +479,31 @@ function renderChart() {
     a.innerText = "Next >";
     topdiv.appendChild(a);
 
+    a = document.createElement('a');
+    a.id="switch";
+    a.setAttribute("class", "w3-right w3-btn");
+    a.setAttribute("href", "#");
+    a.style.cssText = 'width:150px; position: absolute; top: 0px; left: 10%; z-index: 1; display: none';
+    a.innerText = "Trend";
+    topdiv.appendChild(a);
+
     var div = document.createElement('div');
     div.id = 'chartContainer';
     div.style.cssText = 'height: 800px; width: 80%; margin: auto; z-index: 0;';
+    topdiv.appendChild(div);
+
+    div = document.createElement('div');
+    div.id = 'areaChartContainer';
+    div.style.cssText = 'height: 800px; width: 80%; margin: auto; z-index: 0; display: none';
     topdiv.appendChild(div);
 
 
     document.body.appendChild(topdiv);
 
     setTimeout(updateChart, 1000);
-    $("#prev").click (previousDate);
-    $("#next").click (nextDate);
+    $("#prev").click(previousDate);
+    $("#next").click(nextDate);
+    $("#switch").click(switchChart);
 }
 
 function previousDate() {
