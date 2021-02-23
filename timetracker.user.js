@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Time Tracking Helper
 // @namespace    familysicle
-// @version      0.80
+// @version      0.81
 // @description  try to take over the world!
 // @author       You
 // @match        https://*/*
@@ -30,7 +30,9 @@ const fixedColorMap = {
     "MVRT 115": "#662D91",
     "mvrt.com": "#662D91",
     "drive.google.com": "#009900",
-    "randommath.instructure.com": "#00BFFF"
+    "randommath.instructure.com": "#00BFFF",
+    "www.youtube.com": "#FC0D1B",
+    "www.duolingo.com": "#7BC625"
 }
 
 const defaultColorSet = "#6D78AD #51CDA0 #DF7970 #4C9CA0 #AE7D99 #C9D45C #5592AD #DF874D #52BCA8 #8E7AA3 #E3CB64 #C77B85 #C39762 #8DD17E #B57952 #FCC26C".split(" ");
@@ -242,7 +244,8 @@ function trackTime() {
 
     var d = new Date();
     var dt = d.getDate();
-    var timemap = GM_getValue(getStorageName(), {});
+    var storage = "timemap_"+dt;
+    var timemap = GM_getValue(storage, {});
     if (timemap.date == undefined || timemap.date != dt) {
         timemap = {};
         timemap.date = dt;
@@ -260,7 +263,7 @@ function trackTime() {
     if (window.location.pathname != pathname) {
         delete timemap[hostname][window.location.pathname];
     }
-    GM_setValue(getStorageName(), timemap);
+    GM_setValue(storage, timemap);
 }
 
 function toHours(mn) {
