@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         discord_script
 // @namespace    familysicle
-// @version      0.72
+// @version      0.73
 // @description  try to take over the world!
 // @author       You
 // @match        https://discord.com/*
@@ -89,6 +89,15 @@ var timeslots = {
     [50000, 50730], [52200, 52400],
     [60000, 60730], [62200, 62400]
   ],
+  "8pm" : [
+    [2000, 2200],
+    [12000, 12200],
+    [22000, 22200],
+    [32000, 32200],
+    [42000, 42200],
+    [52000, 52200],
+    [62000, 62200]
+  ],
   "classes" : [
     [900, 1100],
     [10800, 10930], [10945, 11115], [11215, 11345],
@@ -128,6 +137,7 @@ function listServers() {
     $( "div[href*='channels']" ).each(function(i, obj) {
         href = obj.attributes.href.nodeValue;
         if (href.indexOf("@me") == -1) {
+            srvlist.push({"id": href.split("/")[2], "name": obj.attributes["aria-label"].nodeValue.trim()});
             var newurl = true;
             for (i=0; i < servers.length; i++) {
                 if (href.indexOf(servers[i].id) != -1) {
@@ -135,7 +145,7 @@ function listServers() {
                 }
             }
             if (newurl) {
-                srvlist.push({"id": href.split("/")[2], "hide": ["lightsout", "classes", "breaks"]});
+                servers.push({"id": href.split("/")[2], "hide": ["lightsout", "classes", "breaks"]});
             }
         }
     });
