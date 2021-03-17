@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         discord_script
 // @namespace    familysicle
-// @version      0.73
+// @version      0.74
 // @description  try to take over the world!
 // @author       You
 // @match        https://discord.com/*
@@ -36,7 +36,7 @@ var servers = [
     },
     {
         "id": "812413283738058802",
-        "hide": ["lightsout", "classes"],
+        "hide": ["lightsout"],
     },
     {
         "id": "453053002975150081",
